@@ -1,26 +1,26 @@
-# octet test run, 2026-11-03T15:30:45+02:00, host alex-pc, Windows 10.0.26200.9711
+# octet test run, 2026-11-03T16:14:35+02:00, host alex-pc, Windows 10.0.26200.9711, commit a5639a4
 # compiler: MSVC 19.51.36246.0
 # OpenSSL: 3.6.4 (vcpkg x64-windows)
 1: Test command: D:\Dev\GitHub\octet-secure-protocols\build\windows-release\test_classify.exe
 1: Working Directory: D:/Dev/GitHub/octet-secure-protocols/build/windows-release
 1: Test timeout computed to be: 10000000
 1: classify: 538 checks, 0 failed
-1/5 Test #1: unit_classify ....................   Passed    0.06 sec
+1/5 Test #1: unit_classify ....................   Passed    0.26 sec
 2: Test command: D:\Dev\GitHub\octet-secure-protocols\build\windows-release\test_replay.exe
 2: Working Directory: D:/Dev/GitHub/octet-secure-protocols/build/windows-release
 2: Test timeout computed to be: 10000000
 2: replay: 12 checks, 0 failed
-2/5 Test #2: unit_replay ......................   Passed    0.07 sec
+2/5 Test #2: unit_replay ......................   Passed    0.19 sec
 3: Test command: D:\Dev\GitHub\octet-secure-protocols\build\windows-release\test_http.exe
 3: Working Directory: D:/Dev/GitHub/octet-secure-protocols/build/windows-release
 3: Test timeout computed to be: 10000000
 3: http: 22 checks, 0 failed
-3/5 Test #3: unit_http ........................   Passed    0.08 sec
+3/5 Test #3: unit_http ........................   Passed    0.25 sec
 4: Test command: D:\Dev\GitHub\octet-secure-protocols\build\windows-release\test_tls.exe
 4: Working Directory: D:/Dev/GitHub/octet-secure-protocols/build/windows-release
 4: Test timeout computed to be: 10000000
 4: tls: 47 checks, 0 failed
-4/5 Test #4: unit_tls .........................   Passed    0.24 sec
+4/5 Test #4: unit_tls .........................   Passed    0.60 sec
 5: Test command: C:\Users\alext\AppData\Local\Python\pythoncore-3.14-64\python.exe "D:/Dev/GitHub/octet-secure-protocols/tests/integration/test_server.py" "--server" "D:/Dev/GitHub/octet-secure-protocols/build/windows-release/octet.exe" "--mkcert" "D:/Dev/GitHub/octet-secure-protocols/build/windows-release/octet-mkcert.exe" "--workdir" "D:/Dev/GitHub/octet-secure-protocols/build/windows-release/integration"
 5: Working Directory: D:/Dev/GitHub/octet-secure-protocols/build/windows-release
 5: Test timeout computed to be: 120
@@ -66,5 +66,5 @@
 5: connection limit 2
 5:   [PASS] a third connection is closed at once
 5: 35/35 passed
-5/5 Test #5: integration_server ...............   Passed    6.64 sec
+5/5 Test #5: integration_server ...............   Passed    9.21 sec
 100% tests passed, 0 tests failed out of 5

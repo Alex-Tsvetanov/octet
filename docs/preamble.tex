@@ -49,7 +49,8 @@
 \newcommand{\tabref}[1]{(табл.~\ref{#1})}
 \newcommand{\figref}[1]{(фиг.~\ref{#1})}
 
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath}
+\usepackage{newtxmath}  % Times-matched figures and symbols in math mode
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{array}
@@ -70,7 +71,12 @@
 \urlstyle{same}
 
 % Inline code and identifiers.
-\DeclareRobustCommand{\code}[1]{\texttt{#1}}
+% An underscore inside an identifier is a legal break point, so long OpenSSL names
+% such as SSL_TLSEXT_ERR_ALERT_FATAL do not run into the margin.
+\newcommand{\codeunderscore}{\textunderscore\allowbreak}
+\DeclareRobustCommand{\code}[1]{{\ttfamily\let\_\codeunderscore #1}}
+% Justified text with long Latin identifiers needs room to reflow.
+\setlength{\emergencystretch}{3em}
 
 % Tables, listings and figures at single spacing.
 \usepackage{etoolbox}

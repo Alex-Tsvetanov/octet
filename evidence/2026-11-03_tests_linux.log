@@ -1,26 +1,26 @@
-# octet test run, 2026-11-03T15:31:10+02:00, Ubuntu 24.04.4 LTS, kernel 6.6.114.1-microsoft-standard-WSL2
+# octet test run, 2026-11-03T16:15:51+02:00, Ubuntu 24.04.4 LTS in WSL2, kernel 6.6.114.1-microsoft-standard-WSL2, commit a5639a4
 # compiler: g++ (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0
 # OpenSSL: OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)
 1: Test command: /mnt/d/Dev/GitHub/octet-secure-protocols/build/linux-release/test_classify
 1: Working Directory: /mnt/d/Dev/GitHub/octet-secure-protocols/build/linux-release
 1: Test timeout computed to be: 10000000
 1: classify: 538 checks, 0 failed
-1/5 Test #1: unit_classify ....................   Passed    0.03 sec
+1/5 Test #1: unit_classify ....................   Passed    0.04 sec
 2: Test command: /mnt/d/Dev/GitHub/octet-secure-protocols/build/linux-release/test_replay
 2: Working Directory: /mnt/d/Dev/GitHub/octet-secure-protocols/build/linux-release
 2: Test timeout computed to be: 10000000
 2: replay: 12 checks, 0 failed
-2/5 Test #2: unit_replay ......................   Passed    0.01 sec
+2/5 Test #2: unit_replay ......................   Passed    0.19 sec
 3: Test command: /mnt/d/Dev/GitHub/octet-secure-protocols/build/linux-release/test_http
 3: Working Directory: /mnt/d/Dev/GitHub/octet-secure-protocols/build/linux-release
 3: Test timeout computed to be: 10000000
 3: http: 22 checks, 0 failed
-3/5 Test #3: unit_http ........................   Passed    0.01 sec
+3/5 Test #3: unit_http ........................   Passed    0.20 sec
 4: Test command: /mnt/d/Dev/GitHub/octet-secure-protocols/build/linux-release/test_tls
 4: Working Directory: /mnt/d/Dev/GitHub/octet-secure-protocols/build/linux-release
 4: Test timeout computed to be: 10000000
 4: tls: 47 checks, 0 failed
-4/5 Test #4: unit_tls .........................   Passed    0.10 sec
+4/5 Test #4: unit_tls .........................   Passed    0.31 sec
 5: Test command: /usr/bin/python3 "/mnt/d/Dev/GitHub/octet-secure-protocols/tests/integration/test_server.py" "--server" "/mnt/d/Dev/GitHub/octet-secure-protocols/build/linux-release/octet" "--mkcert" "/mnt/d/Dev/GitHub/octet-secure-protocols/build/linux-release/octet-mkcert" "--workdir" "/mnt/d/Dev/GitHub/octet-secure-protocols/build/linux-release/integration"
 5: Working Directory: /mnt/d/Dev/GitHub/octet-secure-protocols/build/linux-release
 5: Test timeout computed to be: 120
@@ -66,5 +66,5 @@
 5: connection limit 2
 5:   [PASS] a third connection is closed at once
 5: 35/35 passed
-5/5 Test #5: integration_server ...............   Passed    6.30 sec
+5/5 Test #5: integration_server ...............   Passed    7.97 sec
 100% tests passed, 0 tests failed out of 5

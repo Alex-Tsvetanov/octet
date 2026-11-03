@@ -23,7 +23,7 @@
 \node[good, below=of cls] (http) {анализатор\\на HTTP};
 \node[bad, below right=0.8cm and 0.4cm of cls] (unk) {затваряне\\без отговор};
 \node[good, below=of tls] (http2) {анализатор на HTTP\\над TLS};
-\node[box, below=1.6cm of http] (resp) {отговор и затваряне};
+\node[box, below=2.3cm of http] (resp) {отговор и затваряне};
 \draw[arr] (acc) -- (read);
 \draw[arr] (read) -- (cls);
 \draw[arr] (cls) -- node[left, font=\small, xshift=-2pt] {0x16} (tls);
