@@ -1,6 +1,6 @@
-# 2026-11-03T15:49:12+02:00 Ubuntu 24.04.4 LTS in WSL2, kernel 6.6.114.1-microsoft-standard-WSL2, commit c08784d, GCC Release
+# 2026-11-03T15:51:57+02:00 Ubuntu 24.04.4 LTS in WSL2, kernel 6.6.114.1-microsoft-standard-WSL2, commit e6b823a, GCC Release
 rounds 15, iterations per round 200000, ClientHello 517 octets
-dedicated  ns per connection: median 82.6, min 77.4, max 142.0
-detecting  ns per connection: median 607.5, min 535.7, max 688.2
-difference ns per connection: 524.9
+dedicated  ns per connection: median 36.0, min 22.6, max 81.5
+detecting  ns per connection: median 199.6, min 142.0, max 484.1
+difference ns per connection: 163.6
 (checksum 3846000000)

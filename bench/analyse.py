@@ -31,6 +31,11 @@ WARMUP = 20
 ITERATIONS = 2000
 SEED = 7
 
+# server.csv, after the label "arm,rep" splits into two fields. The last two are derived
+# here, not written by the server.
+ARM, REP, WIRE, OUTCOME, DECIDE, READY, SERVED, FIRST_READ, TLS_VERSION, ALPN, START = range(11)
+SERVED_FROM_START, READY_FROM_START = 11, 12
+
 
 def pct(values, p):
     s = sorted(values)
@@ -50,14 +55,14 @@ def load(directory):
         for r in group:
             # Derived: served and ready measured from the moment the connection thread
             # started, which removes thread start-up, the same in every arm.
-            if len(r) > 11 and r[11] not in ("", "-1"):
-                start = int(r[11])
-                r.append(str(int(r[6]) - start))  # index 12: served_from_start_us
-                r.append(str(int(r[5]) - start))  # index 13: ready_from_start_us
+            if len(r) > START and r[START] not in ("", "-1"):
+                start = int(r[START])
+                r.append(str(int(r[SERVED]) - start))
+                r.append(str(int(r[READY]) - start))
         measured = group[WARMUP:]
         for r in measured:
-            outcomes[r[3]] = outcomes.get(r[3], 0) + 1
-        kept[key] = [r for r in measured if r[3] == "served"]
+            outcomes[r[OUTCOME]] = outcomes.get(r[OUTCOME], 0) + 1
+        kept[key] = [r for r in measured if r[OUTCOME] == "served"]
     return kept, outcomes
 
 
@@ -102,21 +107,20 @@ def main():
 
     # server.csv columns after the label split: arm, rep, wire, outcome, decide_us,
     # ready_us, served_us, first_read, tls_version, alpn
-    served_col, ready_col, first_col = 6, 5, 7
-    has_start = all(len(r) > 12 for g in kept.values() for r in g)
+    has_start = all(len(r) > READY_FROM_START for g in kept.values() for r in g)
     result = {"meta": meta, "outcomes": outcomes, "arms": {}, "effects": {}}
     for arm in ("tls-detect", "tls-dedicated", "clear-detect", "clear-dedicated"):
         result["arms"][arm] = {
-            "served_us": summarise(column(kept, arm, served_col)),
-            "ready_us": summarise(column(kept, arm, ready_col)),
+            "served_us": summarise(column(kept, arm, SERVED)),
+            "ready_us": summarise(column(kept, arm, READY)),
             # Accept to the end of the first read: on the detect arms this is the wait
             # for the client first bytes, which places any tail on the client side.
-            "decide_us": summarise(column(kept, arm, 4)),
+            "decide_us": summarise(column(kept, arm, DECIDE)),
         }
         if has_start:
-            result["arms"][arm]["start_us"] = summarise(column(kept, arm, 11))
-            result["arms"][arm]["served_from_start_us"] = summarise(column(kept, arm, 12))
-    metrics = [("from_accept", served_col)] + ([("from_thread_start", 12)] if has_start else [])
+            result["arms"][arm]["start_us"] = summarise(column(kept, arm, START))
+            result["arms"][arm]["served_from_start_us"] = summarise(column(kept, arm, SERVED_FROM_START))
+    metrics = [("from_accept", SERVED)] + ([("from_thread_start", SERVED_FROM_START)] if has_start else [])
     for metric, col in metrics:
         for transport in ("tls", "clear"):
             a = column(kept, f"{transport}-detect", col)
@@ -128,7 +132,7 @@ def main():
             result["effects"].setdefault(metric, {})[transport] = {
                 "diff_p50_us": point, "ci_low": low, "ci_high": high, "relative_pct": 100.0 * point / base}
 
-    first_reads = [int(r[first_col]) for (arm, _), g in kept.items() if arm == "tls-detect" for r in g]
+    first_reads = [int(r[FIRST_READ]) for (arm, _), g in kept.items() if arm == "tls-detect" for r in g]
     result["tls_detect_first_read"] = {"min": min(first_reads), "p50": statistics.median(first_reads),
                                        "max": max(first_reads)}
 
