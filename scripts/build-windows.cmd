@@ -8,7 +8,9 @@ rem packages installed. Keep the one the user set.
 set "OCTET_VCPKG_ROOT=%VCPKG_ROOT%"
 for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath`) do set "VSDIR=%%i"
 if not defined VSDIR (echo Visual Studio not found & exit /b 1)
-call "%VSDIR%\VC\Auxiliary\Build\vcvars64.bat" >nul || exit /b 1
+rem vcvars64.bat from Visual Studio 18 prints "vswhere.exe is not recognized" on stderr from
+rem one of its own extension scripts. It is harmless; its exit code is still checked.
+call "%VSDIR%\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1 || exit /b 1
 set "VCPKG_ROOT=%OCTET_VCPKG_ROOT%"
 cd /d "%~dp0.."
 cmake --preset windows-release %OCTET_CONFIGURE% || exit /b 1
