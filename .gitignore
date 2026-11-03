@@ -1,0 +1,24 @@
+# Build trees
+/build/
+cmake-build-*/
+
+# LaTeX: latexmk writes into docs/build. Auxiliaries stay out of git; the PDF is tracked.
+docs/build/*
+!docs/build/Main.pdf
+
+# Generated certificates and benchmark scratch output. The raw records the project
+# cites live in evidence/ and are tracked.
+pki/
+bench/out/
+
+# Python
+__pycache__/
+*.pyc
+
+# Editors and OS
+.vscode/
+.idea/
+.cache/
+*.swp
+.DS_Store
+Thumbs.db
