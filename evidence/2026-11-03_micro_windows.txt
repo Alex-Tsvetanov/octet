@@ -1,0 +1,6 @@
+# 2026-11-03T15:44:51+02:00 host alex-pc commit c08784d, Windows, MSVC Release
+rounds 15, iterations per round 200000, ClientHello 517 octets
+dedicated  ns per connection: median 12.5, min 12.2, max 48.2
+detecting  ns per connection: median 241.6, min 177.1, max 306.3
+difference ns per connection: 229.1
+(checksum 3846000000)

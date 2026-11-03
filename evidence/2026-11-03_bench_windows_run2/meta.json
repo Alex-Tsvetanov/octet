@@ -1,0 +1,49 @@
+{
+  "started": "2026-11-03T15:40:17+0200",
+  "duration_s": 272.8,
+  "host": "alex-pc",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.14.5",
+  "python_openssl": "OpenSSL 3.0.20 7 Apr 2026",
+  "commit": "c08784d",
+  "dirty": false,
+  "reps": 5,
+  "conns_per_arm_per_rep": 400,
+  "warmup_per_arm_per_rep": 20,
+  "offered_rate_per_s": 100.0,
+  "seed": 20261103,
+  "arm_orders": [
+    [
+      "tls-dedicated",
+      "clear-detect",
+      "clear-dedicated",
+      "tls-detect"
+    ],
+    [
+      "clear-dedicated",
+      "clear-detect",
+      "tls-detect",
+      "tls-dedicated"
+    ],
+    [
+      "clear-dedicated",
+      "tls-dedicated",
+      "clear-detect",
+      "tls-detect"
+    ],
+    [
+      "clear-detect",
+      "tls-dedicated",
+      "clear-dedicated",
+      "tls-detect"
+    ],
+    [
+      "clear-detect",
+      "tls-detect",
+      "clear-dedicated",
+      "tls-dedicated"
+    ]
+  ],
+  "server_columns": "arm,rep,wire,outcome,decide_us,ready_us,served_us,first_read,tls_version,alpn,start_us",
+  "client_columns": "arm,rep,index,client_total_us"
+}

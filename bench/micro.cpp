@@ -65,7 +65,10 @@ namespace
 
 	// Detecting listener: read into the classification buffer, classify, wrap it in the
 	// replay reader, and let the TLS layer read it from there.
-	std::uint64_t detecting(const std::array<std::uint8_t, kHello>& wire, std::array<std::uint8_t, kTlsChunk>& tls_in)
+	// The deadline is built once, outside the timed loop: the server builds one per
+	// connection in both arms, so it is not part of the difference.
+	std::uint64_t detecting(const std::array<std::uint8_t, kHello>& wire, std::array<std::uint8_t, kTlsChunk>& tls_in,
+	                        const octet::Deadline& deadline)
 	{
 		std::vector<std::uint8_t> first(kFirstRead);
 		const std::size_t n = fake_recv(wire, first);
@@ -77,7 +80,7 @@ namespace
 		octet::ReplayReader reader(std::move(first), [](std::span<std::uint8_t>, const octet::Deadline&) {
 			return octet::net::IoResult{octet::net::Io::Closed, 0};
 		});
-		const auto r = reader.read(tls_in, octet::Deadline(std::chrono::seconds(1)));
+		const auto r = reader.read(tls_in, deadline);
 		return tls_in[r.bytes - 1] + r.bytes;
 	}
 
@@ -99,6 +102,7 @@ int main()
 	const auto wire = wire_bytes();
 	static std::array<std::uint8_t, kTlsChunk> tls_in{};
 	std::uint64_t sink = 0;
+	const octet::Deadline deadline(std::chrono::hours(1));
 
 	std::vector<double> a;
 	std::vector<double> b;
@@ -108,11 +112,11 @@ int main()
 		if (round % 2 == 0)
 		{
 			a.push_back(ns_per_call([&] { return dedicated(wire, tls_in); }, sink));
-			b.push_back(ns_per_call([&] { return detecting(wire, tls_in); }, sink));
+			b.push_back(ns_per_call([&] { return detecting(wire, tls_in, deadline); }, sink));
 		}
 		else
 		{
-			b.push_back(ns_per_call([&] { return detecting(wire, tls_in); }, sink));
+			b.push_back(ns_per_call([&] { return detecting(wire, tls_in, deadline); }, sink));
 			a.push_back(ns_per_call([&] { return dedicated(wire, tls_in); }, sink));
 		}
 	}
