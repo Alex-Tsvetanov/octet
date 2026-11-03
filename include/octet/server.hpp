@@ -52,6 +52,9 @@ namespace octet
 		long long decide_us = -1;  // protocol known
 		long long ready_us = -1;   // TLS handshake complete, or protocol known for cleartext
 		long long served_us = -1;  // response written
+		// Accept to the moment the connection thread starts running. The same in every
+		// arm and not part of the mechanism, so measurements can subtract it.
+		long long start_us = -1;
 		std::size_t first_read = 0;
 		std::string tls_version;
 		std::string alpn;

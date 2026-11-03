@@ -36,6 +36,9 @@ target_link_libraries(octet PRIVATE octet_core)
 add_executable(octet-mkcert tools/mkcert.cpp)
 target_link_libraries(octet-mkcert PRIVATE octet_core)
 
+add_executable(octet-micro bench/micro.cpp)
+target_link_libraries(octet-micro PRIVATE octet_core)
+
 enable_testing()
 
 foreach(name classify replay http tls)

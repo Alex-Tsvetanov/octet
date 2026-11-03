@@ -133,6 +133,7 @@ namespace octet
 	ConnectionRecord Server::handle(net::Socket sock, Clock::time_point accepted)
 	{
 		ConnectionRecord rec;
+		rec.start_us = micros_since(accepted);
 		const Deadline handshake(accepted + config_.handshake_timeout);
 
 		std::vector<std::uint8_t> first;
@@ -263,7 +264,7 @@ namespace octet
 		std::lock_guard lock(record_mutex_);
 		record_ << config_.label << ',' << to_string(rec.wire) << ',' << rec.outcome << ',' << rec.decide_us << ','
 		        << rec.ready_us << ',' << rec.served_us << ',' << rec.first_read << ',' << rec.tls_version << ','
-		        << rec.alpn << '\n';
+		        << rec.alpn << ',' << rec.start_us << '\n';
 		record_.flush();  // a benchmark stops the server by ending the process
 	}
 

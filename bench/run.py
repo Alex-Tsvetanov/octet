@@ -156,7 +156,7 @@ def main():
         "offered_rate_per_s": args.rate,
         "seed": args.seed,
         "arm_orders": orders,
-        "server_columns": "arm,rep,wire,outcome,decide_us,ready_us,served_us,first_read,tls_version,alpn",
+        "server_columns": "arm,rep,wire,outcome,decide_us,ready_us,served_us,first_read,tls_version,alpn,start_us",
         "client_columns": "arm,rep,index,client_total_us",
     }
     with open(os.path.join(args.out, "meta.json"), "w", encoding="utf-8") as f:
