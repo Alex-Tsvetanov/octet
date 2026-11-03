@@ -1,0 +1,9 @@
+# pdfLaTeX (T2A + tempora). Formatting lives in preamble.tex.
+$pdf_mode = 1;
+$bibtex_use = 2;
+$out_dir = 'build';
+$clean_ext = 'bbl nav out snm synctex.gz run.xml';
+
+# latexmk runs bibtex inside $out_dir, where references.bib is not visible, and MiKTeX
+# bibtex then writes an empty .bbl without an error. The path is added explicitly.
+ensure_path('BIBINPUTS', '.', '..');

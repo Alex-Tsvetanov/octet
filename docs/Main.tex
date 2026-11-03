@@ -1,0 +1,48 @@
+% ============================================================================
+% Курсов проект по „Сигурни протоколи и архитектури за комуникации“
+% ОКС „Магистър“, специалност „Киберсигурност и превенция на киберпрестъпления“,
+% ТУ София. Ръководител: проф. Георги Илиев.
+%
+% Компилация (от docs/):  latexmk -pdf Main.tex
+% Числата идват от docs/generated/, които bench/analyse.py и bench/evidence2tex.py
+% пишат от суровите записи в evidence/. Листингите се четат направо от изходния код.
+% ============================================================================
+\documentclass[14pt, a4paper]{extarticle}
+
+\input{preamble}
+
+\input{generated/2026-11-03_bench_windows_run2_macros}
+\input{generated/2026-11-03_bench_linux_macros}
+\input{generated/2026-11-03_bench_windows_macros}
+\input{generated/evidence_macros}
+
+\newcommand{\octetrepo}{\url{https://github.com/Alex-Tsvetanov/octet}}
+
+\begin{document}
+
+\input{chapters/00_titlepage}
+
+\pagestyle{fancy}
+\setcounter{page}{2}
+{\setstretch{1.2}\tableofcontents}
+\clearpage
+
+\input{chapters/01_vavedenie}
+\input{chapters/02_osnova}
+\input{chapters/03_spodelyane}
+\input{chapters/04_mehanizam}
+\input{chapters/05_sigurnost}
+\input{chapters/06_proverka}
+\input{chapters/07_izmervane}
+\input{chapters/08_zaklyuchenie}
+\input{chapters/09_sakrashteniya}
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{section}{Списък с използваните литературни източници}
+\renewcommand{\refname}{Списък с използваните литературни източници}
+{\setstretch{1.15}
+\bibliographystyle{ieeetr}
+\bibliography{references}}
+
+\end{document}
