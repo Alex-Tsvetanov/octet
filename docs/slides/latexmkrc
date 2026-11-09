@@ -1,0 +1,4 @@
+# pdfLaTeX (T2A + PT Sans). Run from docs/slides/.
+$pdf_mode = 1;
+$out_dir = 'build';
+$clean_ext = 'nav snm vrb';

@@ -1,0 +1,506 @@
+% ============================================================================
+% Презентация на курсовия проект по „Сигурни протоколи и архитектури за комуникации“.
+% Компилация (от docs/slides/):  latexmk Slides.tex
+% Числата идват от ../generated/, същите файлове, които ползва документът. Листингите
+% се четат направо от изходния код. Нищо тук не е преписано на ръка от записите.
+% ============================================================================
+\documentclass[aspectratio=169, 11pt]{beamer}
+
+\usepackage{cmap}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[bulgarian]{babel}
+\usepackage{paratype}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage{listings}
+
+\input{../generated/2026-11-03_bench_windows_run2_macros}
+\input{../generated/2026-11-03_bench_linux_macros}
+\input{../generated/2026-11-03_bench_windows_macros}
+\input{../generated/evidence_macros}
+\input{../generated/effects_plot}
+
+% --- Цветове: един акцент, и по един цвят за всеки изход на разпознаването -----------
+\definecolor{ink}{RGB}{28,32,38}
+\definecolor{muted}{RGB}{110,116,124}
+\definecolor{rule}{RGB}{214,218,224}
+\definecolor{accent}{RGB}{0,74,128}
+\definecolor{tls}{RGB}{0,128,96}
+\definecolor{clear}{RGB}{196,110,0}
+\definecolor{unknown}{RGB}{178,34,34}
+\colorlet{tlsbg}{tls!10}
+\colorlet{clearbg}{clear!12}
+\colorlet{unknownbg}{unknown!9}
+
+% --- Оформление -----------------------------------------------------------------
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{normal text}{fg=ink}
+\setbeamercolor{structure}{fg=accent}
+\setbeamercolor{alerted text}{fg=unknown}
+\setbeamerfont{frametitle}{size=\Large, series=\bfseries}
+\setbeamertemplate{frametitle}{%
+  \vspace{0.55em}\insertframetitle\par
+  \vspace{0.15em}{\color{accent}\rule{2.2em}{2pt}}\vspace{0.1em}}
+\setbeamertemplate{footline}{%
+  \hspace{1em}{\color{muted}\scriptsize octet: TLS и HTTP на един порт}%
+  \hfill{\color{muted}\scriptsize\insertframenumber\,/\,\inserttotalframenumber}\hspace{1em}\vspace{0.7em}}
+\setbeamertemplate{itemize items}{\color{accent}\small$\blacktriangleright$}
+\setbeamertemplate{itemize subitem}{\color{muted}\small$\cdot$}
+\setbeamersize{text margin left=1.4em, text margin right=1.4em}
+
+\newcommand{\code}[1]{{\ttfamily #1}}
+\newcommand{\hex}[1]{{\ttfamily\bfseries #1}}
+\newcommand{\src}[1]{{\color{muted}\scriptsize #1}}
+% One row of the effects chart: y, label, interval low, interval high, colour.
+\newcommand{\effect}[5]{%
+  \node[anchor=east, font=\scriptsize] at (\xmin-1,#1) {#2};
+  \draw[#5, line width=2.4pt] (#3,#1) -- (#4,#1);}
+
+\lstset{
+  language=C++, basicstyle=\small\ttfamily, columns=fullflexible, keepspaces=true,
+  keywordstyle=\color{accent}\bfseries, commentstyle=\color{muted}, stringstyle=\color{clear},
+  numbers=left, numberstyle=\tiny\color{muted}, numbersep=6pt, xleftmargin=2em,
+  frame=l, rulecolor=\color{rule}, framerule=1pt, tabsize=2, showstringspaces=false,
+  breaklines=true, breakindent=2em,
+  inputencoding=utf8, morekeywords={constexpr, noexcept, span},
+}
+
+\tikzset{
+  box/.style={draw=rule, rounded corners=3pt, align=center, font=\small, inner sep=5pt,
+    minimum height=0.95cm, fill=white, line width=0.8pt},
+  tlsbox/.style={box, draw=tls, fill=tlsbg},
+  clearbox/.style={box, draw=clear, fill=clearbg},
+  unkbox/.style={box, draw=unknown, fill=unknownbg},
+  arr/.style={-{Latex[length=2.2mm]}, line width=0.9pt, color=ink!70},
+  byte/.style={draw=ink!60, minimum width=1.25cm, minimum height=1cm, font=\ttfamily\bfseries\large},
+}
+
+\title{Разпознаване на TLS и некриптиран HTTP по първия октет при един слушащ сокет}
+\subtitle{Механизъм и анализ на сигурността}
+\author{Алекс Цветанов}
+\date{2026}
+
+\begin{document}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}[plain]
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[accent] (current page.north west) rectangle ([yshift=-0.5cm]current page.north east);
+\end{tikzpicture}
+\vspace{1.2em}
+\begin{columns}[T]
+\column{0.13\textwidth}
+\includegraphics[width=\linewidth]{../images/tu-logo.jpeg}
+\column{0.83\textwidth}
+{\small\color{muted} Технически университет, София \,·\, Факултет по телекомуникации\par
+Курсов проект по „Сигурни протоколи и архитектури за комуникации“\par}
+\end{columns}
+\vspace{2.2em}
+{\LARGE\bfseries Разпознаване на TLS и некриптиран HTTP\\[0.2em] по първия октет при един слушащ сокет\par}
+\vspace{0.6em}
+{\large\color{accent} Механизъм и анализ на сигурността\par}
+\vspace{2.4em}
+{\normalsize Алекс Цветанов, група 263\par}
+{\small\color{muted} Ръководител: проф. Георги Илиев\par}
+\vfill
+{\small\color{muted}\ttfamily github.com/Alex-Tsvetanov/octet\hfill София, 2026}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Два порта или един}
+\begin{columns}[T]
+\column{0.48\textwidth}
+\textbf{Обичайно}\par\medskip
+\begin{tikzpicture}[node distance=0.5cm]
+\node[clearbox, minimum width=4.6cm] (p80) {порт 80: некриптиран HTTP};
+\node[tlsbox, minimum width=4.6cm, below=of p80] (p443) {порт 443: HTTP над TLS};
+\end{tikzpicture}\par\medskip
+{\small Всеки порт знае предварително какво ще пристигне.\par}
+\column{0.48\textwidth}
+\textbf{В този проект}\par\medskip
+\begin{tikzpicture}
+\node[box, minimum width=4.6cm, line width=1.2pt, draw=accent] (one) {един слушащ сокет};
+\node[below=0.25cm of one, font=\small, align=center] {за всяка връзка сървърът\\сам решава: TLS или HTTP?};
+\end{tikzpicture}
+\end{columns}
+\vspace{1.4em}
+\begin{itemize}
+\item Решението се взема \alert{преди} TLS ръкостискането, когато нищо още не е защитено.
+\item Въпросите: стига ли един октет, губят ли се данни, какво струва, какво се отваря за нападателя.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Защо един октет е достатъчен}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\textbf{TLS} \src{RFC 8446, раздел 5.1}\par
+Клиентът говори пръв. Първият запис е ClientHello, ContentType \hex{22 = 0x16}.\par\medskip
+\textbf{HTTP} \src{RFC 9110, раздел 9.1}\par
+Всеки метод е с главни латински букви: \code{GET}, \code{POST}, \dots\ Префиксът на
+HTTP/2 започва с \code{PRI}. \src{RFC 9113, раздел 3.4}\par\medskip
+Двете множества не се пресичат. Тестът минава през всичките 256 стойности
+(\checksClassify{} проверки).
+\column{0.46\textwidth}
+\centering
+\begin{tikzpicture}[x=0.3cm, y=0.3cm]
+\foreach \h [count=\r from 0] in {0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F}{
+  \node[font=\tiny\ttfamily, color=muted, anchor=east] at (-0.5, -\r) {\h0};
+  \node[font=\tiny\ttfamily, color=muted] at (\r, 1) {\h};}
+\foreach \v in {0,...,255}{
+  \pgfmathtruncatemacro{\row}{div(\v,16)}
+  \pgfmathtruncatemacro{\col}{mod(\v,16)}
+  \ifnum\v=22 \def\f{tls}\else
+    \ifnum\v>64 \ifnum\v<91 \def\f{clear}\else\def\f{unknownbg}\fi\else\def\f{unknownbg}\fi
+  \fi
+  \fill[\f] (\col-0.45, -\row-0.45) rectangle (\col+0.45, -\row+0.45);
+}
+\end{tikzpicture}\par
+{\scriptsize
+\textcolor{tls}{\rule{0.7em}{0.7em}} \hex{0x16}: TLS\quad
+\textcolor{clear}{\rule{0.7em}{0.7em}} \hex{A}\dots\hex{Z}: HTTP\quad
+\textcolor{unknownbg}{\rule{0.7em}{0.7em}} останалите: затваряне\par}
+\end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}[fragile]{Разпознаването в кода}
+\begin{columns}[T]
+\column{0.6\textwidth}
+\vspace{-0.6em}
+\lstinputlisting[firstline=36, lastline=52, firstnumber=36, gobble=1, basicstyle=\scriptsize\ttfamily]{../../include/octet/classify.hpp}
+\column{0.36\textwidth}
+\src{include/octet/classify.hpp}\par\medskip
+\begin{itemize}
+\item Гледа само първия октет.
+\item \code{constexpr} и \code{noexcept}: без памет, без изключения, проверимо при компилиране.
+\item Празен вход дава „непознато“, а не предположение.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Пътят на една връзка}
+\centering
+\begin{tikzpicture}[node distance=0.55cm and 0.75cm]
+\node[box] (acc) {\code{accept()}};
+\node[box, right=of acc] (read) {четене до\\2048 октета};
+\node[box, right=of read, draw=accent, line width=1.2pt] (cls) {първият\\октет};
+\node[tlsbox, right=1.3cm of cls, yshift=1.35cm] (tls) {TLS ръкостискане\\(OpenSSL)};
+\node[clearbox, right=1.3cm of cls] (http) {анализатор на HTTP};
+\node[unkbox, right=1.3cm of cls, yshift=-1.35cm] (unk) {затваряне без отговор};
+\node[tlsbox, right=0.6cm of tls] (http2) {HTTP над TLS};
+\draw[arr] (acc) -- (read);
+\draw[arr] (read) -- (cls);
+\draw[arr] (cls.east) -- node[above, sloped, font=\scriptsize\ttfamily] {0x16} (tls.west);
+\draw[arr] (cls.east) -- node[above, font=\scriptsize\ttfamily] {A..Z} (http.west);
+\draw[arr] (cls.east) -- node[below, sloped, font=\scriptsize] {друго} (unk.west);
+\draw[arr] (tls) -- (http2);
+\draw[line width=2pt, accent!60] ([yshift=0.45cm]acc.west |- tls.north) -- ([yshift=0.45cm]tls.north east)
+  node[pos=0.5, above, font=\scriptsize, color=accent] {един общ краен срок: от \code{accept()} до края на ръкостискането};
+\end{tikzpicture}
+\vspace{1.2em}
+\begin{itemize}
+\item Нишка за всяка връзка, с горна граница на едновременните връзки.
+\item Непознатото се затваря мълчаливо: отговорът би дал информация на сканиращия.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Прочетените октети не се губят}
+\begin{columns}[T]
+\column{0.47\textwidth}
+\textbf{\code{MSG\_PEEK}}\par
+Октетите остават в ядрото, следващото четене ги получава отново.
+Цена: второ системно извикване за същите данни.
+\column{0.47\textwidth}
+\textbf{Връщане (\code{ReplayReader})} \src{избраният начин}\par
+Октетите се четат наистина и се подават първи на TLS слоя, после се чете от сокета.
+\end{columns}
+\vspace{1em}
+\begin{itemize}
+\item OpenSSL работи върху два буфера в паметта (\code{BIO\_s\_mem}), а не върху сокета.
+\item \code{BIO\_set\_mem\_eof\_return(-1)}: празен буфер означава „опитай пак“, не „край на потока“.
+\item Всички \winTotal{} измерени TLS връзки с разпознаване: първото четене донася целия
+  ClientHello, \winFirstReadMedian{} октета. Няма допълнително системно извикване.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}[fragile]{Един абсолютен краен срок}
+\begin{columns}[T]
+\column{0.42\textwidth}
+Относителен срок, който започва отначало при всяко четене, не спира клиент, който праща
+по един октет точно преди изтичането. Той държи връзката отворена неограничено.\par\medskip
+Срокът в \code{octet} е \alert{момент във времето}, зададен при приемането. Той покрива
+разпознаването \textbf{и} цялото ръкостискане.\par\medskip
+{\small Клиент, който праща \hex{0x16} и спира, получава същия срок като клиент, който не праща нищо.\par}
+\column{0.56\textwidth}
+\lstinputlisting[firstline=27, lastline=37, firstnumber=27, gobble=2, basicstyle=\scriptsize\ttfamily]{../../include/octet/deadline.hpp}
+\src{include/octet/deadline.hpp}
+\end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Настройки на TLS}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}p{0.3\textwidth}p{0.66\textwidth}@{}}
+\toprule
+\textbf{Настройка} & \textbf{Причина} \\
+\midrule
+минимум TLS 1.2, по избор 1.3 & по-старите версии не се договарят \src{RFC 9325, 3.1.1} \\
+без предоговаряне & атаки върху предоговарянето в TLS 1.2 \src{RFC 5746; RFC 7457, 2.10} \\
+без компресия & отваря атаки като CRIME \src{RFC 7457, 2.6; RFC 9325, 3.3} \\
+сървърът избира шифъра & не клиентът, от общите шифри \\
+строг ALPN & без общ протокол: фатално предупреждение 120 \src{RFC 9325, 3.8} \\
+ключът спрямо сертификата & грешката спира сървъра при стартиране, не при първия клиент \\
+\bottomrule
+\end{tabular}\par\medskip
+{\small Тестов удостоверяващ орган, ECDSA P-256: CA и сертификат на сървъра за \code{localhost}.
+Клиентът проверява веригата и името, без да се изключва нищо.\par}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Отказ по ALPN, видян в мрежата}
+Клиент, чийто списък с протоколи няма \code{http/1.1}, получава преди ServerHello, некриптирано:
+\vspace{1em}
+\begin{center}
+\begin{tikzpicture}[node distance=0pt]
+\node[byte, fill=unknownbg] (b0) {15};
+\node[byte, right=of b0] (b1) {03};
+\node[byte, right=of b1] (b2) {03};
+\node[byte, right=of b2] (b3) {00};
+\node[byte, right=of b3] (b4) {02};
+\node[byte, right=of b4, fill=unknownbg] (b5) {02};
+\node[byte, right=of b5, fill=unknownbg] (b6) {78};
+\node[below=0.2cm of b0, font=\scriptsize, align=center] {ContentType\\alert (21)};
+\node[font=\scriptsize, align=center] at ($(b1.south)!0.5!(b2.south)+(0,-0.55)$) {версия\\0x0303};
+\node[font=\scriptsize, align=center] at ($(b3.south)!0.5!(b4.south)+(0,-0.55)$) {дължина\\2};
+\node[below=0.2cm of b5, font=\scriptsize, align=center] {ниво\\fatal (2)};
+\node[below=0.2cm of b6, font=\scriptsize, align=center] {описание\\120};
+\end{tikzpicture}
+\end{center}
+\vspace{0.8em}
+\begin{itemize}
+\item \code{no\_application\_protocol} \src{RFC 8446, раздел 6; RFC 7301, раздел 3.2}
+\item Интеграционният тест сравнява точно тези октети, а не текста на грешката. На Linux
+  Python с OpenSSL 3.0.13 не може дори да назове предупреждението.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Заплахи и отговори}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}p{0.36\textwidth}p{0.36\textwidth}p{0.22\textwidth}@{}}
+\toprule
+\textbf{Заплаха} & \textbf{Отговор в кода} & \textbf{Проверено} \\
+\midrule
+свързва се и мълчи & общ краен срок от приемането & тест \\
+праща \hex{0x16} и спира & същият срок покрива ръкостискането & тест \\
+по един октет преди изтичане & срокът е абсолютен & по построение \\
+много мълчащи връзки & граница; новите се затварят & тест \\
+\hex{0x16} и безсмислени данни & OpenSSL отхвърля записа & тест \\
+двоични данни, \code{get} & „непознато“, без отговор & тестове \\
+огромна заглавна част & граница 8192 октета, отговор 431 & тест \\
+стара версия на TLS & минимална версия на контекста & тест \\
+\bottomrule
+\end{tabular}\par\medskip
+Разпознаването \textbf{насочва}, а не валидира. Проверките на записа ги прави OpenSSL.
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Грешката, която тестовете откриха}
+\begin{columns}[T]
+\column{0.55\textwidth}
+Първата версия проверяваше границата от 8192 октета само \emph{докато търси} празния ред,
+който завършва заглавната част.\par\medskip
+Едно четене донася и октетите над границата, и празния ред: празният ред се намира
+пръв и заявката се приема.\par\medskip
+\textbf{Поправка:} позицията на празния ред се сравнява с границата.
+\column{0.4\textwidth}
+\begin{tikzpicture}[node distance=0.35cm]
+\node[box, text width=4.4cm] (u) {тест на функция: заявката по един октет\\\textcolor{tls}{\bfseries минава}};
+\node[unkbox, text width=4.4cm, below=of u] (i) {интеграционен тест: поле от 9000 октета\\\textbf{200 вместо 431}};
+\node[box, text width=4.4cm, below=of i] (n) {нов тест на функция: заявката на големи части};
+\end{tikzpicture}
+\end{columns}
+\vspace{0.8em}
+{\small Тестът на функция не можеше да я открие, защото не доставя данните така, както мрежата.\par}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Проверка}
+\begin{columns}[T]
+\column{0.5\textwidth}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Тест} & \textbf{проверки} \\
+\midrule
+разпознаване, 256 стойности & \checksClassify \\
+четене с връщане & \checksReplay \\
+анализатор на HTTP & \checksHttp \\
+TLS сесия в паметта & \checksTls \\
+интеграционен, истински сокети & \checksIntegration \\
+\bottomrule
+\end{tabular}
+\column{0.46\textwidth}
+\begin{itemize}
+\item Минават на \textbf{Windows 11} (MSVC 19.51, OpenSSL 3.6.4) и на \textbf{Ubuntu 24.04 във WSL2} (GCC 14.2, OpenSSL 3.0.13).
+\item Без предупреждения при \code{/W4} и при \code{-Wall -Wextra -Wpedantic}.
+\item macOS: конфигурация има, проверка няма.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Измерване: постановка}
+Четири варианта, всеки като отделен процес на една машина:\par\medskip
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & \textbf{с разпознаване} & \textbf{отделен слушател} \\
+\midrule
+\textcolor{tls}{\textbf{TLS}} & един сокет, решение по октета & ръкостискане веднага \\
+\textcolor{clear}{\textbf{HTTP}} & един сокет, решение по октета & направо към анализатора \\
+\bottomrule
+\end{tabular}\par\medskip
+\begin{itemize}
+\item Една заявка на връзка. Клиент на Python, \winRate{} връзки в секунда, проверка на сертификата и името.
+\item \winReps{} повторения по \winConns{} връзки на вариант, ред на вариантите разбъркан (начално число \winSeed{}).
+\item Ефект = разлика на медианите; 95\% интервал с повторна извадка, 2000 пъти, в рамките на всяко повторение.
+\item Минути, а не часове: Windows \winDuration{}~s, Linux \linDuration{}~s.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Първото измерване мереше друго}
+\begin{columns}[T]
+\column{0.55\textwidth}
+Времената се мереха от \code{accept()}. Разликите излязоха
+$\winfirstTlsDiffA$~µs за TLS и $\winfirstClearDiffA$~µs за HTTP.\par\medskip
+Но при HTTP с отделен слушател времето до решението беше
+\textbf{\winfirstClearDedicatedDecideMedian{}~ms}, а този вариант не чете нищо преди решението.\par\medskip
+Мереше се стартирането на нишката, не разпознаването.
+\column{0.4\textwidth}
+\begin{tikzpicture}[node distance=0.3cm]
+\node[box, text width=4.2cm] (a) {\code{accept()}};
+\node[unkbox, text width=4.2cm, below=of a] (t) {стартиране на нишката\\\scriptsize еднакво за всички, шум};
+\node[tlsbox, text width=4.2cm, below=of t] (s) {от тук се мери във второто измерване};
+\draw[arr] (a) -- (t); \draw[arr] (t) -- (s);
+\end{tikzpicture}
+\end{columns}
+\vspace{0.8em}
+{\small Първото измерване е запазено в хранилището непроменено, като доказателство за проблема.\par}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Резултат}
+\begin{columns}[T]
+\column{0.58\textwidth}
+{\small Ефект на разпознаването, от стартирането на нишката (µs, 95\% интервал)\par}\smallskip
+\begin{tikzpicture}[x=0.085cm, y=0.62cm]
+\def\xmin{-15}\def\xmax{60}
+\draw[rule] (\xmin,0.4) -- (\xmax,0.4);
+\foreach \t in {-10,0,10,20,30,40,50}{
+  \draw[rule] (\t,0.4) -- (\t,-4.2);
+  \node[font=\tiny, color=muted] at (\t,-4.5) {\t};
+}
+\draw[ink, line width=0.9pt] (0,0.4) -- (0,-4.2);
+\effect{-0.5}{Windows, TLS}{\plotwinTlsLow}{\plotwinTlsHigh}{tls!45}
+\fill[tls] (\plotwinTlsDiff,-0.5) circle (2.6pt);
+\effect{-1.5}{Windows, HTTP}{\plotwinClearLow}{\plotwinClearHigh}{clear!45}
+\fill[clear] (\plotwinClearDiff,-1.5) circle (2.6pt);
+\effect{-2.5}{Linux, TLS}{\plotlinTlsLow}{\plotlinTlsHigh}{tls!45}
+\fill[tls] (\plotlinTlsDiff,-2.5) circle (2.6pt);
+\effect{-3.5}{Linux, HTTP}{\plotlinClearLow}{\plotlinClearHigh}{clear!45}
+\fill[clear] (\plotlinClearDiff,-3.5) circle (2.6pt);
+\end{tikzpicture}
+\column{0.38\textwidth}
+\textbf{В паметта}\par
+Windows \microWinDiff{}~ns, Linux \microLinDiff{}~ns на връзка.\par\medskip
+\textbf{TLS връзката}\par
+\winTlsDedicatedMedian{}~ms на Windows, \linTlsDedicatedMedian{}~ms на Linux.\par\medskip
+Цената е под една хилядна от връзката и под разделителната способност от край до край.
+\end{columns}
+\vspace{0.6em}
+{\small Linux, HTTP: $\linClearDiffS$~µs с интервал без нулата. Причината не е установена
+и числото не се приписва на разпознаването.\par}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Сериозното ограничение не е в кода}
+\begin{columns}[T]
+\column{0.55\textwidth}
+Съчетаването на некриптиран и TLS трафик отваря пътя за \alert{SSL Stripping}: нападател
+по средата премахва преминаването към TLS. \src{RFC 9325, 3.2; RFC 7457, 2.1}\par\medskip
+Разпознаването не създава проблема (той съществува и при два порта), но прави
+некриптирания достъп възможен по подразбиране.\par\medskip
+\code{octet} сега: едно и също съдържание и по двата пътя, без HSTS.
+\column{0.4\textwidth}
+\textbf{Правилната схема}\par\smallskip
+\begin{tikzpicture}[node distance=0.35cm]
+\node[clearbox, text width=4.2cm] (c) {некриптиран път:\\само пренасочване към TLS};
+\node[tlsbox, text width=4.2cm, below=of c] (t) {TLS път: съдържание\\и заглавно поле HSTS};
+\draw[arr] (c) -- (t);
+\end{tikzpicture}\par\smallskip
+{\scriptsize HSTS: RFC 6797. Ползата от един порт остава.\par}
+\end{columns}
+\vspace{0.8em}
+{\small Не е правено: fuzzing, одит от трета страна. Нишка на връзка не издържа на голяма атака за отказ от обслужване.\par}
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}{Изводи}
+\begin{itemize}
+\item Един октет разделя TLS от HTTP за всичките 256 стойности. Основата е в стандартите.
+\item Реализацията не губи данни и не отслабва TLS: връщане на октетите, общ краен срок, строг ALPN.
+\item Цената е под една микросекунда на връзка. Производителността не е аргумент срещу механизма.
+\item Аргументът, който остава, е сигурността: пренасочване и HSTS, иначе схемата е уязвима за SSL Stripping.
+\end{itemize}
+\vspace{0.8em}
+\textbf{Следващи стъпки:} пренасочване и HSTS; fuzzing на анализатора и на разпознаването;
+измерване на физически Linux през истинска мрежа.
+\end{frame}
+
+% ---------------------------------------------------------------------------------
+\begin{frame}[plain]
+\centering
+\vfill
+{\Huge\bfseries Въпроси?\par}
+\vspace{1.5em}
+{\large\ttfamily github.com/Alex-Tsvetanov/octet\par}
+\vspace{0.6em}
+{\small\color{muted} Кодът, тестовете, суровите записи от измерванията и документът\par}
+\vfill
+\end{frame}
+
+% --- Резервни слайдове, за въпроси ------------------------------------------------
+\appendix
+
+\begin{frame}{Резерва: Windows, от стартирането на нишката (ms)}
+\centering\small
+\input{../generated/2026-11-03_bench_windows_run2.tex}\par\bigskip
+{\footnotesize Последната колона: най-малката и най-голямата медиана сред повторенията.
+При TLS разликата между тях е по-голяма от самите ефекти.\par}
+\end{frame}
+
+\begin{frame}{Резерва: Linux във WSL2, от стартирането на нишката (ms)}
+\centering\small
+\input{../generated/2026-11-03_bench_linux.tex}\par\bigskip
+{\footnotesize Ограничения: една машина, без мрежа; клиент на Python, по-бавен от сървъра;
+Linux във виртуална машина; нишка на връзка.\par}
+\end{frame}
+
+\begin{frame}{Резерва: отклонение от RFC 9112}
+RFC 9112, раздел 2.2: сървърът \emph{SHOULD} да игнорира празен ред преди реда на заявката.\par\medskip
+\code{octet} не го прави: връзка, която започва с \hex{CR (0x0D)}, се затваря като непозната.\par\medskip
+Причина: иначе решението не може да се вземе по първия октет и трябва да се чака края на
+празните редове. Изборът е съзнателен и е описан в документа.
+\end{frame}
+
+\end{document}

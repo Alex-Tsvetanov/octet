@@ -24,4 +24,5 @@ python bench/analyse.py evidence/2026-11-03_bench_windows_run2 --latex docs/gene
 python bench/analyse.py evidence/2026-11-03_bench_linux --latex docs/generated/2026-11-03_bench_linux.tex --prefix lin
 python bench/analyse.py evidence/2026-11-03_bench_windows --latex docs/generated/2026-11-03_bench_windows.tex --prefix winfirst
 python bench/evidence2tex.py evidence docs/generated/evidence_macros.tex
+python bench/plot2tex.py evidence/2026-11-03_bench_windows_run2 evidence/2026-11-03_bench_linux docs/generated/effects_plot.tex
 ```

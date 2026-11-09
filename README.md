@@ -37,6 +37,7 @@ alert), key checked against the certificate at start-up.
 | `bench/` | the four-arm benchmark, its analysis, and the in-memory micro-benchmark |
 | `evidence/` | raw records and logs the document cites; see [`evidence/README.md`](evidence/README.md) |
 | `docs/` | the course project in LaTeX; numbers come from `docs/generated/`, listings from the source |
+| `docs/slides/` | the class presentation in Beamer, built to [`docs/slides/build/Slides.pdf`](docs/slides/build/Slides.pdf), from the same generated numbers |
 
 ## Build and test
 

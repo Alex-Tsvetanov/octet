@@ -5,6 +5,8 @@ cmake-build-*/
 # LaTeX: latexmk writes into docs/build. Auxiliaries stay out of git; the PDF is tracked.
 docs/build/*
 !docs/build/Main.pdf
+docs/slides/build/*
+!docs/slides/build/Slides.pdf
 
 # Generated certificates and benchmark scratch output. The raw records the project
 # cites live in evidence/ and are tracked.
